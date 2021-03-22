@@ -1,47 +1,68 @@
-import React, { useState, useEffect } from 'react'
-import axios from './axios';
-import './Row.css'
+import React, { useState, useEffect } from "react"
+import axios from "./axios";
+import "./Row.css"
+import Youtube from "react-youtube";
+import movieTrailer from "movie-trailer";
 
-let theOGURL = 'https://image.tmdb.org/t/p/original/';
+const theOGURL = 'https://image.tmdb.org/t/p/original/';
+
 function Row({ title, fetchUrl, isLargeRow }) {
-    let [movies, setMovies] = useState([]);
+    const [movies, setMovies] = useState([]);
+    const [trailerUrl, setTrailerUrl] =useState("");
+
+    const opts = {
+        height: "390",
+        width: "100%",
+        playVars: {
+            autoPlay: 1,
+        },
+    };
+
     useEffect(() => {
         async function fetchData() {
-            let request = await axios.get(fetchUrl);
-            console.log(request.data.results);
-            setMovies(request.data.results)
-            return request;
-
+         const request = await axios.get(fetchUrl);
+         setMovies(request.data.results);;
+         return request;
         }
         fetchData();
-
     }, [fetchUrl]);
-
-    console.table(movies)
+     
+    const handleClick = (movie) => {
+        if (trailerUrl) {
+            setTrailerUrl("");
+        } else {
+         movieTrailer(movie?.title || movie?.name || movie?.original_name || "")
+            .then((url) => {
+                const urlParams = new URLSearchParams(new URL(url).search);
+                setTrailerUrl(urlParams.get('v'));
+            })
+            .catch((error) => console.log(error));
+        }
+    }
 
     return (
-        <div> className='row'
+        <div className="row">
             <h2>{title}</h2>
-            <div className='row__posters'>
-                {/*posters*/}
 
-                {movies.map(movie => (
+            <div className='row__posters'>
+                {movies.map((movie) => (
                     <img 
-                    key={movie.id}
-                    className='row__poster'
-                    src={`${theOGURL}${movie.poster_path}`} 
-                    alt={movie.name}
+                        key={movie.id}
+                        onClick={() => handleClick(movie)}
+                        className={`row__poster ${isLargeRow && "row__posterLarge"}`}
+                        src={`${theOGURL}${
+                            isLargeRow ? movie.poster_path : movie.backdrop_path
+                        }`} 
+                        alt={movie.name}
                     />
                 ))}
 
             </div>
-
-            {/* title */}
-            {/* container -> posters */}
-
+           {trailerUrl && <Youtube videoId={trailerUrl} opts={opts} />}
         </div>
-    )
+    );
 }
 
 export default Row
 
+// "ob3ktDxAjWI"
